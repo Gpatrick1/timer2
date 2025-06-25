@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Coaching Call Timers</title>
+  <style>
+    body {
+      background: #111;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+    h1 {
+      font-size: 2em;
+      margin-bottom: 5px; /* Adjusted margin */
+    }
+    h1 .pink-brain {
+        color: #ff69b4;
+    }
+    /* New styles for the combined subtitle line */
+    .combined-subtitle {
+        font-size: 1.0em; /* Slightly smaller for all on one line */
+        margin-top: 5px;
+        margin-bottom: 15px; /* Space before the question section */
+        color: #ccc;
+    }
+    .combined-subtitle .separator {
+        margin: 0 8px; /* Space around the separator */
+        color: #999; /* Color for the bullet */
+    }
+
+
+    /* Question Section */
+    .question {
+      margin-top: 10px;
+      font-style: italic;
+      color: #ff0;
+      width: 90%;
+      max-width: 800px;
+      text-align: left;
+      padding: 25px;
+      background: #222;
+      border-radius: 15px;
+      border: 2px solid #444;
+      margin-bottom: 30px;
+    }
+    .question label {
+      display: block;
+      margin-bottom: 10px;
+      font-weight: bold;
+      font-size: 1.1em;
+    }
+    .question input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      font-size: 1.1em;
+      border: 1px solid #555;
+      border-radius: 8px;
+      background-color: #333;
+      color: #fff;
+      margin-bottom: 15px;
+      box-sizing: border-box;
+    }
+    /* Style for placeholder text in input fields */
+    .question input[type="text"]::placeholder {
+      color: #aaa; /* Lighter color for better visibility */
+      opacity: 1; /* Firefox default opacity can make it fainter */
+    }
+
+    /* Styling for the displayed answers within the right panel */
+    .displayed-answers-container {
+        margin-top: 10px;
+        margin-bottom: 15px;
+        text-align: left; /* Align text within this container */
+    }
+    .answer-display-rp {
+      background-color: #333; /* Darker background for distinction */
+      color: #FFCC00; /* Brighter yellow/gold for better contrast */
+      padding: 5px 8px; /* Adjusted padding for smaller space */
+      border-radius: 5px;
+      margin-top: 5px; /* Space between displayed answers */
+      min-height: 18px; /* Slightly smaller min-height */
+      font-size: 0.9em; /* Smaller font size for display */
+      word-wrap: break-word; /* Ensure long text wraps */
+      text-align: center; /* Center the text within each display box */
+    }
+    /* New style for the combined details group */
+    .combined-details-group {
+        border: 1px solid #555; /* Add a subtle border */
+        border-radius: 8px;
+        padding: 10px;
+        margin-bottom: 10px; /* Space below the combined group */
+        background-color: #2a2a2a; /* Slightly lighter background than parent */
+        /* Changed to flex column for vertical stacking */
+        display: flex;
+        flex-direction: column;
+        gap: 5px; /* Space between the individual display lines */
+    }
+    /* Styles for individual display lines within the combined-details-group */
+    .combined-details-group .display-line {
+        background-color: #333; /* Darker background for each line */
+        color: #FFCC00; /* Text color */
+        padding: 5px 8px;
+        border-radius: 5px;
+        text-align: center;
+        min-height: 18px;
+        font-size: 0.9em;
+        word-wrap: break-word;
+    }
+
+
+    /* Right Panel (Clock, Main Timer, Start All Timers, and Call Duration Switch) */
+    .right-panel {
+      position: fixed;
+      top: 100px;
+      right: 30px;
+      width: 200px;
+      padding: 15px;
+      background: #222;
+      border-radius: 15px;
+      border: 2px solid #444;
+      text-align: center;
+      z-index: 10;
+      box-sizing: border-box;
+    }
+
+    /* Adjusted clock font size to be 2x bigger */
+    #clock {
+      font-size: 1.8em; /* Base font size for the clock container */
+      margin-bottom: 10px;
+      color: #eee; /* Changed to a lighter grey for better contrast */
+    }
+    #clock .time-part { /* Style for the time part */
+        font-size: 1em; /* 100% of parent's font-size (1.8em) */
+        /* Removed display: block; so it stays inline */
+    }
+    #clock .date-part { /* Style for the date part */
+        font-size: 0.8em; /* 80% of parent's font-size (1.8em) */
+        display: block; /* Make it a block-level element for new line */
+    }
+
+    /* Adjusted main timer font size to be 70% of previous */
+    #main-timer {
+      font-size: 2.8em; /* 4em * 0.7 = 2.8em */
+      margin-bottom: 15px;
+    }
+
+    /* Call Duration Switch Styling (made buttons roughly half the size) */
+    .call-duration-switch {
+        margin-bottom: 15px;
+        display: flex;
+        justify-content: center;
+        gap: 5px; /* Reduced gap */
+        background-color: #333;
+        padding: 5px;
+        border-radius: 8px;
+        border: 1px solid #444;
+    }
+    .call-duration-switch label {
+        cursor: pointer;
+        padding: 4px 8px; /* Roughly half padding */
+        border-radius: 6px;
+        background-color: transparent;
+        transition: background-color 0.3s ease, color 0.3s ease;
+        font-weight: bold;
+        font-size: 0.9em; /* Adjusted font size */
+        flex: 1; /* Make them take equal width */
+        text-align: center;
+    }
+    .call-duration-switch input[type="radio"] {
+        display: none; /* Hide default radio button */
+    }
+    .call-duration-switch input[type="radio"]:checked + label {
+        background-color: #007bff;
+        color: white;
+    }
+
+    /* Timers section (the actual blocks) */
+    #timers {
+      width: 90%;
+      max-width: 800px;
+      padding-right: 230px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Timer Blocks */
+    .timer-block {
+      background: #222;
+      transition: box-shadow 0.3s ease, background-color 0.3s ease;
+      margin: 15px auto;
+      padding: 20px;
+      width: 100%;
+      border-radius: 15px;
+      border: 2px solid #444;
+      text-align: left;
+    }
+    .timer-block.active {
+      background-color: #1a3c66;
+      box-shadow: 0 0 25px 8px #00f;
+      border-color: #00f;
+    }
+
+    .label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 1.4em;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+    .label span:last-child {
+      font-size: 0.8em;
+      color: #eee; /* Changed to a lighter grey for better contrast */
+      font-weight: normal;
+    }
+
+    .time {
+      font-size: 3em;
+      font-weight: bold;
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .celebrate {
+      font-size: 2.2em;
+      margin-top: 15px;
+      display: none;
+      color: #ff0;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    .segment-nav {
+      display: flex;
+      justify-content: center;
+      margin-top: 20px;
+    }
+    button {
+      font-size: 1.1em;
+      padding: 10px 20px;
+      margin: 0 8px;
+      cursor: pointer;
+      border: none;
+      border-radius: 8px;
+      background-color: #007bff;
+      color: white;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    /* Group for "Start All Timers" and "New Call" buttons */
+    .main-action-buttons {
+        display: flex;
+        gap: 5px; /* Space between the buttons */
+        margin-top: 15px; /* Space above this button group */
+    }
+    .main-action-buttons button {
+        flex: 1; /* Make buttons take equal width */
+        font-size: 0.9em; /* Smaller font to match 30/45 min buttons */
+        padding: 4px 8px; /* Smaller padding to match 30/45 min buttons */
+        margin: 0; /* Remove individual button margins */
+    }
+    button#newCallButton {
+        background-color: #dc3545; /* Red color for New Call */
+    }
+    button#newCallButton:hover {
+        background-color: #c82333; /* Darker red on hover */
+    }
+
+
+    .checklist {
+      text-align: left;
+      margin-top: 15px;
+    }
+    .checklist label {
+      margin: 8px 0;
+      font-size: 1.1em;
+      display: flex;
+      align-items: flex-start;
+    }
+    .checklist input[type="checkbox"] {
+      margin-right: 10px;
+      transform: scale(1.2);
+      flex-shrink: 0;
+      margin-top: 4px;
+    }
+    .indent {
+      padding-left: 30px;
+    }
+
+    /* Media queries for responsiveness */
+    @media (max-width: 767px) {
+        .right-panel {
+            position: static;
+            width: 90%;
+            max-width: 400px;
+            margin: 20px auto;
+            right: auto;
+            top: auto;
+            padding-right: 0;
+        }
+        #timers {
+            padding-right: 0;
+            width: 90%;
+            max-width: 700px;
+        }
+        .question input[type="text"] {
+            width: 100%;
+        }
+        .virtues-inputs, .focus-inputs { /* Added .focus-inputs */
+            flex-direction: column;
+        }
+        .virtues-inputs input, .focus-inputs input { /* Added .focus-inputs input */
+            width: 100%;
+            min-width: unset;
+        }
+        .main-action-buttons {
+            flex-direction: column; /* Stack buttons on very small screens if they don't fit side by side */
+            gap: 10px;
+        }
+    }
+  </style>
+</head>
+<body>
+  <h1><span class="pink-brain">🧠</span> Coaching Call Cadence Timer</h1>
+  <p class="combined-subtitle">
+    10 Easy Pieces <span class="separator">&bull;</span>
+    7 Master Steps <span class="separator">&bull;</span>
+    by Gabriel 6-24-25
+  </p>
+
+  <div class="question">
+    <label for="triadName">🤝 Triad Name:</label>
+    <input type="text" id="triadName" placeholder="E.g., Power Group A" oninput="updateAllDisplayFields(); saveData()">
+
+    <label>🎯 Focus • Language • Physiology:</label>
+    <div class="focus-inputs">
+      <input type="text" id="focusField1" placeholder="Focus" oninput="updateAllDisplayFields(); saveData()">
+      <input type="text" id="focusField2" placeholder="Language" oninput="updateAllDisplayFields(); saveData()">
+      <input type="text" id="focusField3" placeholder="Physiology" oninput="updateAllDisplayFields(); saveData()">
+    </div>
+  </div>
+
+  <div class="right-panel">
+    <div class="call-duration-switch">
+      <input type="radio" id="call30min" name="callDuration" value="30" checked onchange="setCallDuration()">
+      <label for="call30min">30 min</label>
+      <input type="radio" id="call45min" name="callDuration" value="45" onchange="setCallDuration()">
+      <label for="call45min">45 min</label>
+    </div>
+
+    <div id="clock"></div>
+    <div id="main-timer">30:00</div>
+
+    <div class="displayed-answers-container">
+        <!-- Combined display group for Triad Name and Focus/Language/Physiology -->
+        <div class="combined-details-group">
+            <div class="display-line" id="displayTriadNameRp">
+                <!-- Triad Name will go here -->
+            </div>
+            <div class="display-line" id="displayFocus1Rp">
+                <!-- Focus will go here -->
+            </div>
+            <div class="display-line" id="displayFocus2Rp">
+                <!-- Language will go here -->
+            </div>
+            <div class="display-line" id="displayFocus3Rp">
+                <!-- Physiology will go here -->
+            </div>
+        </div>
+    </div>
+
+    <div class="main-action-buttons">
+        <button onclick="triggerSegment(0)">▶️ Start All Timers</button>
+        <button id="newCallButton" onclick="newCall()">🔄 New Call</button>
+    </div>
+  </div>
+
+  <div id="timers">
+    <div class="timer-block" id="segment-block-0">
+      <div class="label">
+        <span>🔥 Prime the Connection</span>
+        <span id="range-0">0–5 min</span>
+      </div>
+      <div class="checklist">
+        <label><input type="checkbox" onchange="saveData()" /> 1. <b><i>CONNECT</i></b> and get rapport</label>
+        <label><input type="checkbox" onchange="saveData()" /> 2. Get <b><i>FEEDBACK</i></b> on goals</label>
+        <label><input type="checkbox" onchange="saveData()" /> 3. <b><i>CELEBRATE</i></b> wins and anchor successes</label>
+        <label><input type="checkbox" onchange="saveData()" /> 4. Coach through assignment <b><i>CHALLENGES</i></b></label>
+      </div>
+      <div class="time" id="timer1">05:00</div>
+      <div class="segment-nav">
+        <button onclick="skipSegment(1)">⏭️ Skip</button>
+      </div>
+      <div class="celebrate" id="celebrate1">🎉🏆 Complete!</div>
+    </div>
+    <div class="timer-block" id="segment-block-1">
+      <div class="label">
+        <span>🎯 Get to the Truth & Create the Shift</span>
+        <span id="range-1">5–25 min</span>
+      </div>
+      <div class="checklist">
+        <label><input type="checkbox" onchange="saveData()" /> 5. <b><i>CLARIFY</i></b> outcomes</label>
+        <label><input type="checkbox" onchange="saveData()" /> 6. Use <b><i>PSYCHOLOGY</i></b> & Results coaching (Close the gap between where they are and where they want to be)</label>
+        <div class="indent">
+          <label><input type="checkbox" onchange="saveData()" /> 6.1. <b><i>CONNECT</i></b> and appreciate their world</label>
+          <label><input type="checkbox" /> 6.2. <b><i>CONNECT</i></b> and get <b><i>LEVERAGE</i></b></label>
+          <label><input type="checkbox" /> 6.3. <b><i>INTERRUPT</i></b> and <b><i>ANNIHILATE</i></b> limiting patterns</label>
+          <label><input type="checkbox" /> 6.4. <b><i>DEFINE</i></b> the problem in solvable terms</label>
+          <label><input type="checkbox" /> 6.5. <b><i>ACCESS</i></b> empowering resources & <b><i>MAKE</i></b> the change</label>
+          <label><input type="checkbox" /> 6.6. <b><i>CONDITION</i></b> the change</label>
+          <label><input type="checkbox" /> 6.7. <b><i>TEST</i></b> and <b><i>LINK</i></b> to purpose/environment</label>
+        </div>
+      </div>
+      <div class="time" id="timer2">20:00</div>
+      <div class="segment-nav">
+        <button onclick="triggerSegment(0)">⬅️ Back</button>
+        <button onclick="skipSegment(2)">⏭️ Skip</button>
+      </div>
+      <div class="celebrate" id="celebrate2">🎉🏆 Complete!</div>
+    </div>
+    <div class="timer-block" id="segment-block-2">
+      <div class="label">
+        <span>💡 Lock in Insight & Next Steps</span>
+        <span id="range-2">25–28.5 min</span>
+      </div>
+      <div class="checklist">
+        <label><input type="checkbox" onchange="saveData()" /> 7. <b><i>FUTURE PACE</i></b> and <b><i>CONDITION CLIENT</i></b></label>
+        <label><input type="checkbox" onchange="saveData()" /> 8. <b><i>GIVE ASSIGNMENTS</i></b> and <b><i>ESTABLISH OUTCOMES</i></b></label>
+        <label><input type="checkbox" /> 9. Have <b><i>CLIENT RECAP</i></b> their homework</label>
+        <label><input type="checkbox" /> 10. <b><i>ANCHOR</i></b> the value and <b><i>COMPLETE</i></b> in peak state</label>
+      </div>
+      <div class="time" id="timer3">03:30</div>
+      <div class="segment-nav">
+        <button onclick="triggerSegment(1)">⬅️ Back</button>
+        <button onclick="skipSegment(3)">⏭️ Skip</button>
+      </div>
+      <div class="celebrate" id="celebrate3">🎉🏆 Complete!</div>
+    </div>
+    <div class="timer-block" id="segment-block-3">
+      <div class="label">
+        <span>📝 Close, Capture notes, enter session</span>
+        <span id="range-3">28.5–30 min</span>
+      </div>
+      <div class="time" id="timer4">01:30</div>
+      <div class="segment-nav">
+        <button onclick="triggerSegment(2)">⬅️ Back</button>
+      </div>
+      <div class="celebrate" id="celebrate4">🎉🏆 Call Complete!</div>
+    </div>
+  </div>
+  <audio id="beep">
+    <source src="beep.mp3" type="audio/mpeg">
+    <source src="beep.ogg" type="audio/ogg">
+    Audio not supported.
+  </audio>
+  <audio id="applause">
+    <source src="applause.mp3" type="audio/mpeg">
+    <source src="applause.ogg" type="audio/ogg">
+    Audio not supported.
+  </audio>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <!-- Firebase SDK Imports -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // Global Firebase variables accessible in the script
+    window.app = null;
+    window.db = null;
+    window.auth = null;
+    window.userId = null;
+    window.isAuthReady = false; // Flag to ensure auth is ready before Firestore ops
+
+    // Debounce function to limit how often saveData is called
+    let saveTimeout;
+    window.saveData = function() {
+        clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(async () => {
+            if (!window.isAuthReady || !window.userId) {
+                console.warn("Firebase not ready or userId not available. Cannot save data.");
+                return;
+            }
+
+            // Gather data from input fields
+            const triadName = document.getElementById('triadName').value;
+            const focusField1 = document.getElementById('focusField1').value;
+            const focusField2 = document.getElementById('focusField2').value;
+            const focusField3 = document.getElementById('focusField3').value;
+
+            // Gather data from checkboxes
+            const checklists = {};
+            document.querySelectorAll('.checklist label input[type="checkbox"]').forEach((checkbox, index) => {
+                const checklistId = checkbox.closest('.timer-block').id + '-checkbox-' + index;
+                checklists[checklistId] = checkbox.checked;
+            });
+
+            const dataToSave = {
+                triadName: triadName,
+                focusField1: focusField1,
+                focusField2: focusField2,
+                focusField3: focusField3,
+                checklists: checklists,
+                lastSaved: new Date().toISOString()
+            };
+
+            try {
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                const docRef = doc(window.db, `artifacts/${appId}/users/${window.userId}/callData`, 'currentCall');
+                await setDoc(docRef, dataToSave, { merge: true });
+                console.log("Data saved successfully!");
+            }
+            catch (e) {
+                console.error("Error saving document: ", e);
+            }
+        }, 1000);
+    };
+
+
+    // Function to load data from Firestore
+    async function loadData() {
+        if (!window.isAuthReady || !window.userId) {
+            console.warn("Firebase not ready or userId not available. Cannot load data.");
+            return;
+        }
+
+        try {
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            const docRef = doc(window.db, `artifacts/${appId}/users/${window.userId}/callData`, 'currentCall');
+
+            onSnapshot(docRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    console.log("Data loaded:", data);
+
+                    // Populate input fields
+                    document.getElementById('triadName').value = data.triadName || '';
+                    document.getElementById('focusField1').value = data.focusField1 || '';
+                    document.getElementById('focusField2').value = data.focusField2 || '';
+                    document.getElementById('focusField3').value = data.focusField3 || '';
+
+                    // Update all displayed answer fields
+                    window.updateAllDisplayFields();
+
+                    // Populate checkboxes
+                    if (data.checklists) {
+                        document.querySelectorAll('.checklist label input[type="checkbox"]').forEach((checkbox, index) => {
+                            const checklistId = checkbox.closest('.timer-block').id + '-checkbox-' + index;
+                            if (typeof data.checklists[checklistId] !== 'undefined') {
+                                checkbox.checked = data.checklists[checklistId];
+                            }
+                        });
+                    }
+                } else {
+                    console.log("No such document!");
+                }
+            }, (error) => {
+                console.error("Error getting document:", error);
+            });
+        } catch (e) {
+            console.error("Error loading document: ", e);
+        }
+    }
+
+
+    // Firebase Initialization and Authentication
+    document.addEventListener('DOMContentLoaded', async () => {
+        try {
+            const firebaseConfigString = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
+            const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+            if (firebaseConfigString) {
+                const firebaseConfig = JSON.parse(firebaseConfigString);
+                window.app = initializeApp(firebaseConfig);
+                window.db = getFirestore(window.app);
+                window.auth = getAuth(window.app);
+
+                onAuthStateChanged(window.auth, async (user) => {
+                    if (user) {
+                        window.userId = user.uid;
+                        window.isAuthReady = true;
+                        console.log("Firebase authenticated. User ID:", window.userId);
+                        await loadData();
+                    } else {
+                        if (!initialAuthToken) {
+                            try {
+                                const anonUser = await signInAnonymously(window.auth);
+                                window.userId = anonUser.user.uid;
+                                window.isAuthReady = true;
+                                console.log("Signed in anonymously. User ID:", window.userId);
+                                await loadData();
+                            } catch (error) {
+                                console.error("Anonymous sign-in failed:", error);
+                            }
+                        } else {
+                            window.userId = null;
+                            window.isAuthReady = false;
+                            console.log("No authenticated user.");
+                        }
+                    }
+                });
+
+                if (initialAuthToken) {
+                    try {
+                        await signInWithCustomToken(window.auth, initialAuthToken);
+                        console.log("Signed in with custom token.");
+                    } catch (error) {
+                        console.error("Custom token sign-in failed:", error);
+                        try {
+                            const anonUser = await signInAnonymously(window.auth);
+                            window.userId = anonUser.user.uid;
+                            window.isAuthReady = true;
+                            console.log("Custom token failed, signed in anonymously. User ID:", window.userId);
+                            await loadData();
+                        } catch (anonError) {
+                            console.error("Anonymous sign-in fallback failed:", anonError);
+                        }
+                    }
+                } else {
+                    try {
+                        const anonUser = await signInAnonymously(window.auth);
+                        window.userId = anonUser.user.uid;
+                        window.isAuthReady = true;
+                        console.log("Signed in anonymously (no custom token). User ID:", window.userId);
+                        await loadData();
+                    } catch (error) {
+                        console.error("Anonymous sign-in failed (initial):", error);
+                    }
+                }
+
+            } else {
+                console.warn("Firebase config not found. Data persistence will not work.");
+            }
+        } catch (e) {
+            console.error("Failed to initialize Firebase:", e);
+        }
+
+        setCallDuration();
+    });
+
+    const segments30min = [
+      { id: 1, label: "🔥 Prime the Connection", time: 5 * 60, range: "0–5 min" },
+      { id: 2, label: "🎯 Get to the Truth & Create the Shift", time: 20 * 60, range: "5–25 min" },
+      { id: 3, label: "💡 Lock in Insight & Next Steps", time: (3 * 60) + 30, range: "25–28.5 min" },
+      { id: 4, label: "📝 Close, Capture notes, enter session", time: (2 * 60) - 30, range: "28.5–30 min" }
+    ];
+
+    const segments45min = [
+      { id: 1, label: "🔥 Prime the Connection", time: 5 * 60, range: "0–5 min" },
+      { id: 2, label: "🎯 Get to the Truth & Create the Shift", time: 35 * 60, range: "5–40 min" },
+      { id: 3, label: "💡 Lock in Insight & Next Steps", time: (3 * 60) + 30, range: "40–43.5 min" },
+      { id: 4, label: "📝 Close, Capture notes, enter session", time: (2 * 60) - 30, range: "43.5–45 min" }
+    ];
+
+    let currentSegments = [];
+    let intervalHandles = [];
+    let currentSegment = -1;
+    let totalCallDurationSeconds = 30 * 60;
+    let mainInterval;
+
+    window.setCallDuration = function() {
+        const selectedDuration = document.querySelector('input[name="callDuration"]:checked').value;
+        window.clearAllTimers();
+
+        if (selectedDuration === '30') {
+            currentSegments = [...segments30min];
+            totalCallDurationSeconds = 30 * 60;
+        } else {
+            currentSegments = [...segments45min];
+            totalCallDurationSeconds = 45 * 60;
+        }
+
+        const min = Math.floor(totalCallDurationSeconds / 60).toString().padStart(2, '0');
+        const sec = (totalCallDurationSeconds % 60).toString().padStart(2, '0');
+        document.getElementById('main-timer').textContent = `${min}:${sec}`;
+
+        currentSegments.forEach((segment, index) => {
+            const display = document.getElementById(`timer${segment.id}`);
+            if (display) {
+                display.textContent = formatTime(segment.time);
+            }
+            const rangeDisplay = document.getElementById(`range-${index}`);
+            if (rangeDisplay) {
+                rangeDisplay.textContent = segment.range;
+            }
+        });
+        window.saveData();
+    }
+
+    function updateClock() {
+      const now = new Date();
+      const timeString = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true, timeZoneName: 'short' });
+      const dateString = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+      document.getElementById('clock').innerHTML = `<span class="time-part">${timeString}</span><br><span class="date-part">${dateString}</span>`;
+    }
+    setInterval(updateClock, 1000);
+
+
+    function updateMainTimer() {
+      const min = Math.floor(totalCallDurationSeconds / 60).toString().padStart(2, '0');
+      const sec = (totalCallDurationSeconds % 60).toString().padStart(2, '0');
+      document.getElementById('main-timer').textContent = `${min}:${sec}`;
+      if (totalCallDurationSeconds > 0) totalCallDurationSeconds--;
+      else clearInterval(mainInterval);
+    }
+
+    window.startSegment = function(index) {
+      window.clearAllTimers();
+      currentSegment = index;
+      if (mainInterval === undefined || mainInterval === null) {
+          mainInterval = setInterval(updateMainTimer, 1000);
+      }
+
+      const segment = currentSegments[index];
+      const display = document.getElementById(`timer${segment.id}`);
+      let remaining = segment.time;
+      display.textContent = formatTime(remaining);
+
+      const timerBlock = document.querySelectorAll('.timer-block')[index];
+      timerBlock.classList.add('active');
+
+      intervalHandles[index] = setInterval(() => {
+        remaining--;
+        display.textContent = formatTime(remaining);
+        if (remaining <= 0) {
+          clearInterval(intervalHandles[index]);
+          window.completeSegment(index);
+        }
+      }, 1000);
+    }
+
+    window.completeSegment = function(index) {
+      const segment = currentSegments[index];
+      const display = document.getElementById(`timer${segment.id}`);
+      display.textContent = "00:00";
+      const celebrate = document.getElementById(`celebrate${segment.id}`);
+      const beep = document.getElementById("beep");
+      const applause = document.getElementById("applause");
+      celebrate.style.display = "block";
+      try {
+        beep.play().catch(e => console.warn("Beep audio failed to play:", e.message));
+        setTimeout(() => applause.play().catch(e => console.warn("Applause audio failed to play:", e.message)), 300);
+      } catch (e) {
+        console.warn("Audio playback error:", e.message);
+      }
+      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+      if (index < currentSegments.length - 1) {
+        setTimeout(() => window.triggerSegment(index + 1), 2000);
+      } else {
+        clearInterval(mainInterval);
+        mainInterval = null;
+      }
+    }
+
+    window.skipSegment = function(index) {
+      if (currentSegment >= 0 && currentSegment < currentSegments.length) {
+          window.completeSegment(currentSegment);
+      }
+
+      window.clearAllTimers();
+      if (index < currentSegments.length) {
+        window.triggerSegment(index);
+      } else {
+        clearInterval(mainInterval);
+        mainInterval = null;
+        document.getElementById('main-timer').textContent = "00:00";
+      }
+    }
+
+    window.clearAllTimers = function() {
+      intervalHandles.forEach(clearInterval);
+      intervalHandles = [];
+      document.querySelectorAll('.celebrate').forEach(el => el.style.display = 'none');
+      document.querySelectorAll('.timer-block').forEach(block => block.classList.remove('active'));
+    }
+
+    function formatTime(seconds) {
+      let min = Math.floor(seconds / 60).toString().padStart(2, '0');
+      let sec = (seconds % 60).toString().padStart(2, '0');
+      return `${min}:${sec}`;
+    }
+
+    window.triggerSegment = function(index) {
+      window.clearAllTimers();
+      document.querySelectorAll('.timer-block').forEach(block => block.classList.remove('active'));
+      window.startSegment(index);
+    }
+
+    // New main function to update all dynamic display fields in the right panel
+    window.updateAllDisplayFields = function() {
+        const triadName = document.getElementById('triadName').value;
+        const focus = document.getElementById('focusField1').value;
+        const language = document.getElementById('focusField2').value;
+        const physiology = document.getElementById('focusField3').value;
+
+        document.getElementById('displayTriadNameRp').textContent = triadName ? `🤝 Triad: ${triadName}` : '';
+        document.getElementById('displayFocus1Rp').textContent = focus ? `Focus: ${focus}` : '';
+        document.getElementById('displayFocus2Rp').textContent = language ? `Language: ${language}` : '';
+        document.getElementById('displayFocus3Rp').textContent = physiology ? `Physiology: ${physiology}` : '';
+    }
+
+
+    // Function to handle starting a new call (reset everything except input fields)
+    window.newCall = function() {
+        window.clearAllTimers();
+        clearInterval(mainInterval);
+        mainInterval = null;
+
+        const selectedDuration = document.querySelector('input[name="callDuration"]:checked').value;
+        if (selectedDuration === '30') {
+            totalCallDurationSeconds = 30 * 60;
+        } else {
+            totalCallDurationSeconds = 45 * 60;
+        }
+        document.getElementById('main-timer').textContent = formatTime(totalCallDurationSeconds);
+
+        currentSegments.forEach((segment, index) => {
+            const display = document.getElementById(`timer${segment.id}`);
+            if (display) {
+                display.textContent = formatTime(segment.time);
+            }
+            const rangeDisplay = document.getElementById(`range-${index}`);
+            if (rangeDisplay) {
+                rangeDisplay.textContent = segment.range;
+            }
+        });
+
+        // Update displayed answers based on *current* input values (which are not cleared)
+        window.updateAllDisplayFields();
+
+        // Uncheck all checklists and save their state
+        document.querySelectorAll('.checklist input[type="checkbox"]').forEach(checkbox => {
+            checkbox.checked = false;
+        });
+        window.saveData();
+        currentSegment = -1;
+    }
+  </script>
+</body>
+</html>
